@@ -1,115 +1,12 @@
 #!/usr/bin/python3
 
 import pygame
-import time
-import random
-from enum import Enum
-from dataclasses import dataclass
-from my_class import Direction, Screen, Color, is_opposite
+from my_class import Screen_enum, Color, Screen
+from Snake import Snake
+from Main import Main
+from Over import Over
+from Help import Help
 
-screen = Screen.Game
-
-class Snake:
-    def __init__(self, x, y):
-        self.dimensions = (x, y)
-        self.score = 0
-        self.head_life = 3
-        self.map = [[0 for i in range(x)] for j in range(y)]
-        self.direction = Direction.Right
-        self.is_dead = False
-        self.stop_game = False
-    
-    def update(self, events):
-        old_map = self.map.copy()
-        old_direction = self.direction
-        for event in events:
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                exit(0)
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP or event.key == pygame.K_z:
-                    self.direction = Direction.Up
-                if event.key == pygame.K_DOWN or event.key == pygame.K_s:
-                    self.direction = Direction.Down
-                if event.key == pygame.K_LEFT or event.key == pygame.K_q:
-                    self.direction = Direction.Left
-                if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
-                    self.direction = Direction.Right
-        if is_opposite(self.direction, old_direction):
-            self.direction = old_direction
-        head = self.search_head()
-
-        if self.direction == Direction.Up and head[0] - 1 >= 0:
-            self.map[head[0] - 1][head[1]] = self.head_life + 1
-        elif self.direction == Direction.Up:
-            screen = Screen.Over
-            self.is_dead = True
-        if self.direction == Direction.Down and head[0] < self.dimensions[1]:
-            self.map[head[0] + 1][head[1]] = self.head_life + 1
-        elif self.direction == Direction.Down:
-            screen = Screen.Over
-            self.is_dead = True
-        if self.direction == Direction.Left and head[1] - 1 >= 0:
-            self.map[head[0]][head[1] - 1] = self.head_life + 1
-        elif self.direction == Direction.Left:
-            screen = Screen.Over
-            self.is_dead = True
-        if self.direction == Direction.Right and head[1] + 1 < self.dimensions[0]:
-            self.map[head[0]][head[1] + 1] = self.head_life + 1
-        elif self.direction == Direction.Right:
-            screen = Screen.Over
-            self.is_dead = True
-        self.kill_cell()
-        self.did_eat_or_die(old_map)
-    
-    def kill_cell(self):
-        for y in range(len(self.map)):
-            for x in range(len(self.map[y])):
-                if self.map[y][x] > 0:
-                    self.map[y][x] -= 1
-    
-    def did_eat_or_die(self, old_map):
-        pos = self.search_head()
-        print(pos, old_map[pos[0]][pos[1]])
-        if old_map[pos[0]][pos[1]] == -1:
-            print("eat")
-            self.eat()
-        if old_map[pos[0]][pos[1]] > 0:
-            screen = Screen.Over
-            # self.is_dead = True
-
-    def eat(self):
-        self.score += 1
-        self.head_life += 1
-        for y in range(len(self.map)):
-            for x in range(len(self.map[y])):
-                if self.map[y][x] > 0:
-                    self.map[y][x] += 1
-        self.place_apple()
-
-    def search_head(self):
-        max = (0, 0)
-        max_value = 0
-        for y in range(len(self.map)):
-            for x in range(len(self.map[y])):
-                if self.map[y][x] > max_value:
-                    max = (y, x)
-                    max_value = self.map[y][x]
-        return max
-    
-    def place_apple(self):
-        place = False
-        while not place:
-            random_x = random.randint(0, self.dimensions[0] - 1)
-            random_y = random.randint(0, self.dimensions[1] - 1)
-            if self.map[random_y][random_x] == 0:
-                self.map[random_y][random_x] = -1
-                place = True
-    def place_snake(self):
-        y = self.dimensions[1] // 2
-        x = self.dimensions[0] // 4
-        self.map[y][x] = self.head_life
-    
 def draw(window: pygame.Surface, snake: Snake):
     for y in range(len(snake.map)):
         for x in range(len(snake.map[y])):
@@ -122,19 +19,40 @@ def draw(window: pygame.Surface, snake: Snake):
                 pygame.draw.rect(window, Color.apple, (x * 20, y * 20, 20, 20))
     pygame.display.update()
 
+def main_loop(window: pygame.Surface):
+    game = Main()
+    clock = pygame.time.Clock()
+    while Screen.screen == Screen_enum.Main:
+        game.update(pygame.event.get())
+        game.draw(window)
+        clock.tick(20)
 
 def game_loop(window: pygame.Surface):
     snake = Snake(40, 30)
     snake.place_apple()
     snake.place_snake()
     clock = pygame.time.Clock()
-    while not snake.is_dead:
+    while Screen.screen == Screen_enum.Game:
         window.fill(Color.background)
         snake.update(pygame.event.get())
-        snake.print_map()
         draw(window, snake)
-        # time.sleep(0.5)
-        clock.tick(2)
+        clock.tick(3)
+
+def over_loop(window: pygame.Surface):
+    game = Over()
+    clock = pygame.time.Clock()
+    while Screen.screen == Screen_enum.Over:
+        game.update(pygame.event.get())
+        game.draw(window)
+        clock.tick(20)
+    
+def help_loop(window: pygame.Surface):
+    help = Help()
+    clock = pygame.time.Clock()
+    while Screen.screen == Screen_enum.Help:
+        help.update(pygame.event.get())
+        help.draw(window)
+        clock.tick(20)
 
 def main():
     pygame.init()
@@ -142,9 +60,15 @@ def main():
     window_height = 600
     window = pygame.display.set_mode((window_width, window_height))
     pygame.display.set_caption("Snake Game")
-    # while(1):
-    #     if screen == screen.Game:
-    game_loop(window)
+    while(Screen.screen != Screen_enum.Exit):
+        if Screen.screen == Screen_enum.Main:
+            main_loop(window)
+        if Screen.screen == Screen_enum.Game:
+            game_loop(window)
+        if Screen.screen == Screen_enum.Over:
+            over_loop(window)
+        if Screen.screen == Screen_enum.Help:
+            help_loop(window)
     pygame.quit()
 
 main()
