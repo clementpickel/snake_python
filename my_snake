@@ -7,18 +7,6 @@ from Main import Main
 from Over import Over
 from Help import Help
 
-def draw(window: pygame.Surface, snake: Snake):
-    for y in range(len(snake.map)):
-        for x in range(len(snake.map[y])):
-            if snake.map[y][x] > 0:
-                if snake.map[y][x] == snake.head_life:
-                    pygame.draw.rect(window, Color.head, (x * 20, y * 20, 20, 20))
-                else:
-                    pygame.draw.rect(window, Color.body, (x * 20, y * 20, 20, 20))
-            if snake.map[y][x] == -1:
-                pygame.draw.rect(window, Color.apple, (x * 20, y * 20, 20, 20))
-    pygame.display.update()
-
 def main_loop(window: pygame.Surface):
     game = Main()
     clock = pygame.time.Clock()
@@ -35,7 +23,7 @@ def game_loop(window: pygame.Surface):
     while Screen.screen == Screen_enum.Game:
         window.fill(Color.background)
         snake.update(pygame.event.get())
-        draw(window, snake)
+        snake.draw(window)
         clock.tick(3)
 
 def over_loop(window: pygame.Surface):

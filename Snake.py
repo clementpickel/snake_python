@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from my_class import Direction, Screen, Screen_enum, is_opposite
+from my_class import Direction, Screen, Screen_enum, is_opposite, Color
 import random
 import pygame
 
@@ -57,6 +57,7 @@ class Snake:
 
         self.kill_cell()
         self.did_eat_or_die(old_map)
+        self.score = self.head_life - 3
     
     def copy_map(self):
         res = []
@@ -109,3 +110,20 @@ class Snake:
         y = self.dimensions[1] // 2
         x = self.dimensions[0] // 4
         self.map[y][x] = self.head_life
+    
+    def draw(self, window: pygame.Surface,):
+        for y in range(len(self.map)):
+            for x in range(len(self.map[y])):
+                if self.map[y][x] > 0:
+                    if self.map[y][x] == self.head_life:
+                        pygame.draw.rect(window, Color.head, (x * 20, y * 20, 20, 20))
+                    else:
+                        pygame.draw.rect(window, Color.body, (x * 20, y * 20, 20, 20))
+                if self.map[y][x] == -1:
+                    pygame.draw.rect(window, Color.apple, (x * 20, y * 20, 20, 20))
+        
+        font = pygame.font.Font(None, 40)
+        text_surface = font.render(str(self.score), True, Color.white)
+        window.blit(text_surface, (10, 10))
+
+        pygame.display.update()
